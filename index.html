@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colin Lee</title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative; /* For positioning the particle container */
+        }
+        h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        p {
+            font-size: 1.2em;
+            margin: 5px 0;
+        }
+        .particle-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: -1;
+            pointer-events: none;
+        }
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 5s infinite ease-in-out;
+        }
+        @keyframes twinkle {
+            0% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        /* Funny flying element styles */
+        .flying-thing {
+            position: absolute;
+            font-size: 2em; /* Adjust size as needed */
+            white-space: nowrap; /* Prevent wrapping */
+            z-index: 0; /* Above particles but below text if needed */
+            pointer-events: none;
+            will-change: transform; /* For smoother animation */
+        }
+    </style>
+</head>
+<body>
+    <h1>Updates Are Underway</h1>
+    <p>Sorry, I'm not too sure how long the site will be down for.</p>
+    <p>Colin Lee - 09/23/2025</p>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const particleContainer = document.createElement('div');
+            particleContainer.className = 'particle-container';
+            document.body.appendChild(particleContainer);
+            for (let i = 0; i < 50; i++) { // Adjust number for more/less particles
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = `${Math.random() * 100}vw`;
+                particle.style.top = `${Math.random() * 100}vh`;
+                particle.style.animationDelay = `${Math.random() * 5}s`; // Random delay for natural twinkling
+                particle.style.animationDuration = `${3 + Math.random() * 4}s`; // Vary duration for variety
+                particleContainer.appendChild(particle);
+            }
+
+            // Physics constants
+            const gravity = 0.1; // Pixels per frame gravity
+            const elasticity = 0.8; // Bounce factor (0-1)
+            const friction = 0.98; // Slow down on ground
+            const minVelocity = 0.1; // Threshold to stop
+            const flyers = []; // Array to hold all flying things
+
+            // Funny flying things: Spawn one every 5 seconds
+            function spawnFlyingThing() {
+                const things = [
+                    '🚀', '🛸', '⌨️', '💾', '📀', '⚙️', '💻', '🖥️', '🖱️', '📱', '🔌', '🔋', '📡', '🤖',
+                    '📊', '📈', '📉', '🗃️', '🖨️', '🕹️', '🎮', '🔒', '🔑', '📧', '🌐', '🖥️', '📲', '💿',
+                    '🗄️', '📁', '📂', '🔍', '📝', '📚', '🧮', '🔢', '📟', '🖲️', '🕸️', '🔗', '🛡️', '🗡️'
+                ]; // Expanded with more tech/CS/IS/analytics-related emojis
+                const randomThing = things[Math.floor(Math.random() * things.length)];
+                
+                const flyer = document.createElement('div');
+                flyer.className = 'flying-thing';
+                flyer.textContent = randomThing;
+                particleContainer.appendChild(flyer);
+
+                const rect = flyer.getBoundingClientRect();
+                const size = { width: rect.width, height: rect.height };
+
+                // Always spawn from the top
+                let x = Math.random() * window.innerWidth;
+                let y = -size.height;
+                let vx = (Math.random() - 0.5) * 4; // Random horizontal velocity for variety
+                let vy = 2 + Math.random() * 3; // Downward speed
+
+                // Random rotation for fun
+                const rotation = (Math.random() - 0.5) * 360;
+                flyer.style.transform = `translate(${x}px, ${y}px) rotate(${rotation}deg)`;
+
+                // Store physics properties
+                flyer.physics = { x, y, vx, vy, settled: false, size };
+
+                flyers.push(flyer);
+            }
+
+            // Animation loop
+            function animate() {
+                const width = window.innerWidth;
+                const height = window.innerHeight;
+
+                // Update positions
+                flyers.forEach(flyer => {
+                    if (flyer.physics.settled) return;
+
+                    let { x, y, vx, vy, size } = flyer.physics;
+
+                    // Apply gravity
+                    vy += gravity;
+
+                    // Update position
+                    x += vx;
+                    y += vy;
+
+                    // Bounce off walls
+                    if (x < 0) {
+                        x = 0;
+                        vx = -vx * elasticity;
+                    } else if (x > width - size.width) {
+                        x = width - size.width;
+                        vx = -vx * elasticity;
+                    }
+                    if (y < 0) {
+                        y = 0;
+                        vy = -vy * elasticity;
+                    } else if (y > height - size.height) {
+                        y = height - size.height;
+                        vy = -vy * elasticity;
+                        vx *= friction; // Apply friction on ground
+
+                        // Check if settled
+                        if (Math.abs(vy) < minVelocity && Math.abs(vx) < minVelocity) {
+                            flyer.physics.settled = true;
+                            vy = 0;
+                            vx = 0;
+                        }
+                    }
+
+                    // Temporarily update physics for collision checks
+                    flyer.physics = { x, y, vx, vy, size, settled: flyer.physics.settled };
+                });
+
+                // Handle collisions
+                for (let i = 0; i < flyers.length; i++) {
+                    for (let j = i + 1; j < flyers.length; j++) {
+                        const f1 = flyers[i].physics;
+                        const f2 = flyers[j].physics;
+
+                        if (f1.settled && f2.settled) continue;
+
+                        const cx1 = f1.x + f1.size.width / 2;
+                        const cy1 = f1.y + f1.size.height / 2;
+                        const cx2 = f2.x + f2.size.width / 2;
+                        const cy2 = f2.y + f2.size.height / 2;
+
+                        const dx = cx2 - cx1;
+                        const dy = cy2 - cy1;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+
+                        const r1 = (f1.size.width + f1.size.height) / 4;
+                        const r2 = (f2.size.width + f2.size.height) / 4;
+                        const minDist = r1 + r2;
+
+                        if (dist < minDist && dist > 0) {
+                            const nx = dx / dist;
+                            const ny = dy / dist;
+
+                            const rvx = f2.vx - f1.vx;
+                            const rvy = f2.vy - f1.vy;
+                            const dot = rvx * nx + rvy * ny;
+
+                            // Resolve only if approaching or overlapping
+                            if (dot < 0 || dist < minDist * 0.9) { // Extra condition for deep overlaps
+                                const e = elasticity;
+                                const overlap = minDist - dist;
+
+                                if (f1.settled || f2.settled) {
+                                    // Treat settled as static
+                                    const moving = f1.settled ? f2 : f1;
+                                    const stat = f1.settled ? f1 : f2;
+
+                                    const rdot = moving.vx * nx + moving.vy * ny;
+                                    const imp = - (1 + e) * rdot;
+
+                                    moving.vx += imp * nx;
+                                    moving.vy += imp * ny;
+
+                                    // Position correction: push moving away
+                                    moving.x += overlap * nx;
+                                    moving.y += overlap * ny;
+
+                                } else {
+                                    // Both moving, elastic collision
+                                    const imp = - (1 + e) * dot / 2;
+
+                                    f1.vx -= imp * nx;
+                                    f1.vy -= imp * ny;
+                                    f2.vx += imp * nx;
+                                    f2.vy += imp * ny;
+
+                                    // Position correction
+                                    const push = overlap / 2;
+                                    f1.x -= push * nx;
+                                    f1.y -= push * ny;
+                                    f2.x += push * nx;
+                                    f2.y += push * ny;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Apply final transforms
+                flyers.forEach(flyer => {
+                    const { x, y, settled } = flyer.physics;
+                    if (!settled) {
+                        // Update velocities in physics (already done)
+                    }
+                    const rotationMatch = flyer.style.transform.match(/rotate\((-?\d+\.?\d*)deg\)/);
+                    const rotation = rotationMatch ? parseFloat(rotationMatch[1]) : 0;
+                    flyer.style.transform = `translate(${x}px, ${y}px) rotate(${rotation + flyer.physics.vx}deg)`;
+                });
+
+                requestAnimationFrame(animate);
+            }
+
+            // Start animation loop
+            animate();
+
+            // Spawn every 5 seconds
+            function scheduleSpawn() {
+                spawnFlyingThing();
+                setTimeout(scheduleSpawn, 5000);
+            }
+
+            // Start the first one after a short delay
+            setTimeout(scheduleSpawn, 5000);
+        });
+    </script>
+</body>
+</html>
