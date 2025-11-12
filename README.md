@@ -1,1 +1,3 @@
-# This is a subdomain test
+# subdomain.colinlee.me
+
+This is a subdomain test website.
