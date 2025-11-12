@@ -1,3 +1,3 @@
-# https://www.subdomain.colinlee.me
+# https://subdomain.colinlee.me
 
 This is a subdomain test website.
